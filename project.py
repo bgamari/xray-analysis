@@ -4,6 +4,9 @@ from numpy import cos, sin, pi, r_, c_
 from scipy.interpolate import griddata
 from matplotlib import pyplot as pl
 from circle_fit import fit_circle
+from gaussian_smooth import blur_image
+
+with_errorbars = False
 
 def prompt_center(d):
     points = []
@@ -22,6 +25,7 @@ def prompt_center(d):
     fig.canvas.mpl_connect('key_press_event', key_press)
     pl.imshow(np.log1p(d))
     pl.autoscale(enable=False)
+    pl.colorbar()
     pl.show()
     ((cx,cy), r) = fit_circle(np.array(points))
     return (cx,cy)
@@ -39,6 +43,7 @@ from libtiff import TIFFfile
 tif = TIFFfile(sys.argv[1])
 samples, sample_names = tif.get_samples()
 img = samples[0][0,:,:]
+img = blur_image(img, 3)
 
 print "Image size", img.shape
 center = np.array(img.shape) / 2
@@ -46,15 +51,17 @@ center = np.array(img.shape) / 2
 center = prompt_center(img)
 print "Image center", center
 pl.figure()
-pl.imshow(img)
+pl.imshow(np.log1p(img))
+pl.colorbar()
 pl.savefig('proj1.png')
 
-p = cartesian_projection(img, center)
+p = cartesian_projection(img, center, r_min=50, r_max=450)
 pl.figure()
-pl.imshow(p['i'], aspect='auto')
+pl.imshow(np.log1p(p['i']), aspect='auto')
 pl.savefig('proj.png')
 
 pl.figure()
-p = p[np.logical_and(100 < p['r'], p['r'] < 400)]
-pl.errorbar(p['r'][0,:], np.mean(p['i'], axis=0), yerr=np.std(p['i'], axis=0))
+#p = p[np.logical_and(50 < p['r'], p['r'] < 400)]
+pl.errorbar(p['r'][0,:], np.mean(p['i'], axis=0), marker='+',
+            yerr=np.std(p['i'], axis=0) if with_errorbars else None)
 pl.savefig('i.png')
