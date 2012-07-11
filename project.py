@@ -1,5 +1,4 @@
 import sys
-from PIL import Image
 import numpy as np
 from numpy import cos, sin, pi, r_, c_
 from scipy.interpolate import griddata
@@ -36,9 +35,11 @@ def cartesian_projection(d, center, r_min=None, r_max=None, nphi=300, nr=100):
     samples = griddata((xs.flatten(),ys.flatten()), d.flatten(), sample_pts, method='linear')
     return np.rec.fromarrays([rs, phis, samples], names='r,phi,i')
 
-img = Image.open(sys.argv[1]).convert('F')
-print "Value extrema", img.getextrema()
-img = np.array(img, dtype='f')
+from libtiff import TIFFfile
+tif = TIFFfile(sys.argv[1])
+samples, sample_names = tif.get_samples()
+img = samples[0][0,:,:]
+
 print "Image size", img.shape
 center = np.array(img.shape) / 2
 
