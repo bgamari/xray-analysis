@@ -5,6 +5,7 @@ from scipy.interpolate import griddata
 from matplotlib import pyplot as pl
 from circle_fit import fit_circle
 from gaussian_smooth import blur_image
+from libtiff import TIFFfile
 
 with_errorbars = False
 
@@ -39,7 +40,6 @@ def cartesian_projection(d, center, r_min=None, r_max=None, nphi=300, nr=100):
     samples = griddata((xs.flatten(),ys.flatten()), d.flatten(), sample_pts, method='linear')
     return np.rec.fromarrays([rs, phis, samples], names='r,phi,i')
 
-from libtiff import TIFFfile
 tif = TIFFfile(sys.argv[1])
 samples, sample_names = tif.get_samples()
 img = samples[0][0,:,:]
