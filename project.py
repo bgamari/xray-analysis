@@ -31,7 +31,7 @@ def prompt_center(d):
     ((cx,cy), r) = fit_circle(np.array(points))
     return (cx,cy)
 
-def cartesian_projection(d, center, r_min=None, r_max=None, nphi=300, nr=100):
+def cartesian_projection(d, center, r_min=None, r_max=None, nphi=100, nr=1000):
     r_max = min([center[0], center[1], d.shape[0]-center[0], d.shape[1]-center[1]] + ([r_max] if r_max is not None else []))
     if r_min is None: r_min = 0
     xs,ys = np.indices(d.shape)
@@ -40,28 +40,50 @@ def cartesian_projection(d, center, r_min=None, r_max=None, nphi=300, nr=100):
     samples = griddata((xs.flatten(),ys.flatten()), d.flatten(), sample_pts, method='linear')
     return np.rec.fromarrays([rs, phis, samples], names='r,phi,i')
 
-tif = TIFFfile(sys.argv[1])
-samples, sample_names = tif.get_samples()
-img = samples[0][0,:,:]
-img = blur_image(img, 3)
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--center', metavar='X,Y', help='Center of field')
+    parser.add_argument('-b', '--bg', type=argparse.FileType('r'), help='Background image to process')
+    parser.add_argument('-q', '--q-min', type=float, help='Minimum momentum transfer to plot')
+    parser.add_argument('-Q', '--q-max', type=float, help='Maximum momentum transfer to plot')
+    parser.add_argument('files', type=argparse.FileType('r'), nargs='+', help='Files to process')
+    args = parser.parse_args()
 
-print "Image size", img.shape
-center = np.array(img.shape) / 2
+    center = None
+    if args.center is not None:
+        x,y = args.center.split(',')
+        center = (float(x), float(y))
 
-center = prompt_center(img)
-print "Image center", center
-pl.figure()
-pl.imshow(np.log1p(img))
-pl.colorbar()
-pl.savefig('proj1.png')
+    background = None
+    if args.bg is not None:
+        background = None # TODO
 
-p = cartesian_projection(img, center, r_min=50, r_max=450)
-pl.figure()
-pl.imshow(np.log1p(p['i']), aspect='auto')
-pl.savefig('proj.png')
+    for f in files:
+        print "Processing %s" % f
+        tif = TIFFfile(f)
+        samples, sample_names = tif.get_samples()
+        img = samples[0][0,:,:]
+        img = blur_image(img, 3)
+        print "Image size", img.shape
 
-pl.figure()
-#p = p[np.logical_and(50 < p['r'], p['r'] < 400)]
-pl.errorbar(p['r'][0,:], np.mean(p['i'], axis=0), marker='+',
-            yerr=np.std(p['i'], axis=0) if with_errorbars else None)
-pl.savefig('i.png')
+        #center = np.array(img.shape) / 2
+        if center is None:
+            center = prompt_center(img)
+            print "Image center", center
+
+        pl.figure()
+        pl.imshow(np.log1p(img))
+        pl.colorbar()
+        pl.savefig('proj1.png')
+
+        p = cartesian_projection(img, center, r_min=args.q_min, r_max=args.q_max) # TODO: Fix scaling
+        pl.figure()
+        pl.imshow(np.log1p(p['i']), aspect='auto')
+        pl.savefig('proj.png')
+
+        pl.figure()
+        #p = p[np.logical_and(50 < p['r'], p['r'] < 400)]
+        pl.errorbar(p['r'][0,:], np.mean(p['i'], axis=0), marker='+',
+                    yerr=np.std(p['i'], axis=0) if with_errorbars else None)
+        pl.savefig('i.png')
