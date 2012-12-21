@@ -59,9 +59,9 @@ if __name__ == '__main__':
     if args.bg is not None:
         background = None # TODO
 
-    for f in files:
+    for f in args.files:
         print "Processing %s" % f
-        tif = TIFFfile(f)
+        tif = TIFFfile(f.name)
         samples, sample_names = tif.get_samples()
         img = samples[0][0,:,:]
         img = blur_image(img, 3)
