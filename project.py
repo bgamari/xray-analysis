@@ -6,6 +6,7 @@ from matplotlib import pyplot as pl
 from circle_fit import fit_circle
 from gaussian_smooth import blur_image
 from libtiff import TIFFfile
+from circle_refine import refine_circle
 
 with_errorbars = False
 
@@ -29,6 +30,7 @@ def prompt_center(d):
     pl.colorbar()
     pl.show()
     ((cx,cy), r) = fit_circle(np.array(points))
+    ((cx,cy), r) = refine_circle((cx,cy), r, d)
     return (cx,cy)
 
 def cartesian_projection(d, center, r_min=None, r_max=None, nphi=100, nr=1000):

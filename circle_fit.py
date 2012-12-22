@@ -48,5 +48,6 @@ def fit_circle(points, c0=None):
     d = lambda (cx, cy, r): sqrt((points[:,0]-cx)**2 + (points[:,1]-cy)**2) - r
     out = scipy.optimize.leastsq(d, (c0[0], c0[1], 1))
     xopt = out[0]
+    print 'Fitted', xopt
     return ((xopt[0], xopt[1]), xopt[2])
 
